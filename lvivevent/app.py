@@ -43,7 +43,7 @@ def register():
     # validate username
     if (not 0 < len(username) < 11) or \
             (not set(ascii_letters + digits + '_').issuperset(set(username.lower()))):
-        return jsonify(status="wrong username format")
+        return jsonify(status="invalid username format")
     if Users.query.filter_by(username=username).first():
         return jsonify(status="username is already taken")
 
