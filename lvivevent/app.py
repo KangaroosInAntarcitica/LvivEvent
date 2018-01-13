@@ -5,6 +5,8 @@ from uuid import uuid4
 from werkzeug.security import generate_password_hash, \
     check_password_hash
 import os
+from string import ascii_letters, digits
+import re
 
 app = Flask(__name__)
 
@@ -28,22 +30,39 @@ class Users(db.Model):
         self.pw_hash = pw_hash
         self.uuid = str(uuid4())
 
+
 @app.route('/', methods=['GET'])
 def default():
     return('This is the default webpage. Here is your request: ' + str(request))
 
+
 @app.route("/register", methods=["POST"])
 def register():
     username = request.json["username"]
+    # validate username
+    if (not 0 < len(username) < 11) or \
+            (not set(ascii_letters + digits + '_').issuperset(set(username.lower()))):
+        return jsonify(status="wrong username format")
+    if Users.query.filter_by(username=username).first():
+        return jsonify(status="username unavailable")
+
     email = request.json["email"]
-    pw_hash = generate_password_hash(request.json["password"])
-    if username and email and pw_hash:
-        new_user = Users(username, email, pw_hash)
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify(status="success")
-    else:
-        return jsonify(status="failure")
+    # validate email
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email)
+        return jsonify(status="wrong e-mail format")
+    if Users.query.filter_by(email=email).first():
+        return jsonify(status="e-mail unavailable")
+
+    password = request.json["password"]
+    # validate password
+    if (not 8 <= len(password)):
+        return jsonify(status="too short password")
+    pw_hash = generate_password_hash(password)
+
+    new_user = Users(username, email, pw_hash)
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify(status="success")
 
 
 @app.route("/login", methods=["POST"])
@@ -53,7 +72,7 @@ def login():
     username = request.json["username"]
     password = request.json["password"]
     print("Username:", username, "\t - Password:", password)
-    
+
     user = Users.query.filter_by(username=username).first()
     if user:
         if check_password_hash(user.pw_hash, password):
