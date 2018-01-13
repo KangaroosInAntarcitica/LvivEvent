@@ -43,16 +43,20 @@ def register():
     # validate username
     if (not 0 < len(username) < 11) or \
             (not set(ascii_letters + digits + '_').issuperset(set(username.lower()))):
-        return jsonify(status="wrong username format")
+        return jsonify(status="invalid username format")
     if Users.query.filter_by(username=username).first():
-        return jsonify(status="username unavailable")
+        return jsonify(status="username is already taken")
 
     email = request.json["email"]
     # validate email
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+<<<<<<< HEAD
         return jsonify(status="wrong e-mail format")
+=======
+        return jsonify(status="invalid e-mail format")
+>>>>>>> cc0f6c1c220eff747c92b5815a26f6fd971f51e1
     if Users.query.filter_by(email=email).first():
-        return jsonify(status="e-mail unavailable")
+        return jsonify(status="e-mail is already taken")
 
     password = request.json["password"]
     # validate password
