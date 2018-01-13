@@ -68,7 +68,7 @@ def register():
 
 @app.route("/login", methods=["POST"])
 def login():
-    # testing git
+
     print("A post request to login was made")
     username = request.json["username"]
     password = request.json["password"]
