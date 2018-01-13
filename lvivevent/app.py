@@ -8,6 +8,7 @@ import os
 from string import ascii_letters, digits
 import re
 
+
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
