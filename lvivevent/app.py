@@ -80,13 +80,10 @@ def login():
     password = request.json["password"]
 
     user = Users.query.filter_by(username=username).first()
-    if user:
-        if check_password_hash(user.pw_hash, password):
-            return jsonify(status="success")
-        else:
-            return jsonify(status="wrong details")
+    if (user and check_password_hash(user.pw_hash, password)):
+        return jsonify(status="success")
     else:
-        return jsonify(status="wrong details")
+        return jsonify(status="wrong e-mail or password")
 
 # EVENTS PART
 # TODO make a separate file for different functions
