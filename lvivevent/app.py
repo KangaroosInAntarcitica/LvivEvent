@@ -8,6 +8,8 @@ import os
 from string import ascii_letters, digits
 import re
 
+from datetime import date
+
 
 app = Flask(__name__)
 
@@ -39,6 +41,9 @@ def default():
 
 @app.route("/register", methods=["POST"])
 def register():
+    print("A post request to register was made")
+    print("The details are: ", request.json)
+
     username = request.json["username"]
     # validate username
     if (not 0 < len(username) < 11) or \
@@ -68,20 +73,76 @@ def register():
 
 @app.route("/login", methods=["POST"])
 def login():
-
     print("A post request to login was made")
+    print("The details are: ", request.json)
+
     username = request.json["username"]
     password = request.json["password"]
-    print("Username:", username, "\t - Password:", password)
 
     user = Users.query.filter_by(username=username).first()
     if user:
         if check_password_hash(user.pw_hash, password):
             return jsonify(status="success")
         else:
-            return jsonify(status="wrong username or password")
+            return jsonify(status="wrong details")
     else:
-        return jsonify(status="wrong username or password")
+        return jsonify(status="wrong details")
+
+# EVENTS PART
+# TODO make a separate file for different functions
+
+class Events(db.Model):
+    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), unique=True)
+    startdate = db.Column(db.Date)
+    enddate = db.Column(db.Date)
+    image = db.Column(db.Text)
+    description = db.Column(db.Text)
+    address = db.Column(db.Text)
+    transfer = db.Column(db.Text)
+    timetable = db.Column(db.Text)
+
+    def __init__(self, data):
+        self.name = data['name']
+
+        self.startdate = date(*map(int, data['startdate'].split('-')))
+        self.enddate = date(*map(int, data['enddate'].split('-')))
+
+        self.image = data['image'] if 'image' in data else None
+        self.description = data['description'] if 'description' in data else None
+        self.address = data['address'] if 'address' in data else None
+        self.transfer = data['transfer'] if 'transfer' in data else None
+        self.timetable = data['timetable'] if 'timetable' in data else None
+
+@app.route("/events", methods=["GET"])
+def get_events():
+    print("A get request to events was made")
+
+    def parse_event(event):
+        return {
+            'name': event.name,
+            'enddate': str(event.enddate),
+            'startdate': str(event.startdate),
+            'image': event.image,
+            'address': event.address,
+            'transfer': event.transfer,
+            'timetable': event.timetable
+        }
+
+    events = list(map(parse_event, Events.query.all()))
+    return jsonify(events)
+
+@app.route("/newEvent", methods=["POST"])
+def post_event():
+    print("A post request to newEvent was made")
+
+    data = request.json
+
+    new_event = Events(data)
+    db.session.add(new_event)
+    db.session.commit()
+    return jsonify(status="success")
 
 
 if __name__ == '__main__':
