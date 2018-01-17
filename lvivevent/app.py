@@ -11,6 +11,18 @@ import re
 from datetime import date
 
 
+def parse_event(event):
+    return {
+        'name': event.name,
+        'enddate': str(event.enddate),
+        'startdate': str(event.startdate),
+        'image': event.image,
+        'address': event.address,
+        'transfer': event.transfer,
+        'timetable': event.timetable
+    }
+
+
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -88,6 +100,7 @@ def login():
 # EVENTS PART
 # TODO make a separate file for different functions
 
+
 class Events(db.Model):
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
@@ -104,7 +117,8 @@ class Events(db.Model):
         self.name = data['name']
 
         self.startdate = date(*map(int, data['startdate'].split('-')))
-        self.enddate = date(*map(int, data['enddate'].split('-')))
+        self.enddate = date(*map(int, data['enddate'].split('-'))) \
+            if 'enddate' in data else self.startdate
 
         self.image = data['image'] if 'image' in data else None
         self.description = data['description'] if 'description' in data else None
@@ -112,23 +126,14 @@ class Events(db.Model):
         self.transfer = data['transfer'] if 'transfer' in data else None
         self.timetable = data['timetable'] if 'timetable' in data else None
 
+
 @app.route("/events", methods=["GET"])
 def get_events():
     print("A get request to events was made")
 
-    def parse_event(event):
-        return {
-            'name': event.name,
-            'enddate': str(event.enddate),
-            'startdate': str(event.startdate),
-            'image': event.image,
-            'address': event.address,
-            'transfer': event.transfer,
-            'timetable': event.timetable
-        }
-
     events = list(map(parse_event, Events.query.all()))
     return jsonify(events)
+
 
 @app.route("/newEvent", methods=["POST"])
 def post_event():
@@ -140,6 +145,15 @@ def post_event():
     db.session.add(new_event)
     db.session.commit()
     return jsonify(status="success")
+
+
+@app.route("/getEvent/<event_name>")
+def getEvent(event_name):
+    event = Events.query.filter_by(name=event_name).first()
+    if event:
+        return jsonify(parse_event(event))
+    else:
+        return jsonify(status="wrong event name")
 
 
 if __name__ == '__main__':
