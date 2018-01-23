@@ -1,5 +1,7 @@
 # LvivEvent
 
+!! Backend moved to [LvivEventBack](https://github.com/KangaroosInAntarcitica/LvivEventBack)
+
 All the server code is in the **lvivevent** folder. The app.py is the main server code file. 
 Server is hosted on heroku.com
 
