@@ -1,18 +1,31 @@
 import React, { Component, PureComponent } from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet, Image, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet, Image, FlatList, ScrollView } from 'react-native';
 
-import EventsList from './EventsList.js';
+// this is how menuHeader property should look:
+// onPress is called with the button id
+const defaultMenuHeader = {
+    name: 'Welcome!',
+    buttons: [
+        {id: 'Test', title: 'Test', onPress: (id) => {Alert.alert('Pressed', 'id: ' + id)}}
+    ]
+};
 
 class Header extends Component{
     render(){
         return(
             <View style={styles.header}>
-                <Image style={styles.backgroundImage} source={require('./images/menuHeader.png')} />
-                <TouchableOpacity onPress={ () => {} } style={styles.headerButton}>
-                    <Image style={styles.backgroundImage} source={require('./images/menuButton.png')} />
-                </TouchableOpacity>
+                <Image style={styles.backgroundImage} source={require('./images/menuHeaderBack.png')} />
+                <View>
+                    <TouchableOpacity onPress={ () => {} } style={styles.headerButton}>
+                        <Image style={styles.backgroundImage} source={require('./images/menu-icon-white.png')} />
+                    </TouchableOpacity>
+                </View>
                 <Text style={styles.headerText}> { this.props.text } </Text>
-                <TouchableOpacity onPress={ ()=>{} } style={styles.headerButton} />
+                <View style={{flexDirection: 'row'}} >
+                    <TouchableOpacity onPress={ ()=>{} } style={styles.headerButton} >
+                        <Image style={styles.backgroundImage} source={require('./images/search-icon-white.png')} />
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     }
@@ -26,29 +39,31 @@ class Option extends Component{
         if(this.props.selected)
             return(
                 <TouchableOpacity onPress={ this.onPress.bind(this) } style={styles.optionsButton}>
-                    <Image style={styles.backgroundImage} source={require('./images/optionsBackSelected.png')} />
-                    <Text style={styles.optionsTextSelected}> {this.props.title} </Text>
+                    <View style={styles.optionsButtonRect}>
+                        <Text style={styles.optionsTextSelected}> {this.props.title} </Text>
+                    </View>
                 </TouchableOpacity>
             );
         else
             return(
                 <TouchableOpacity onPress={ this.onPress.bind(this) } style={styles.optionsButton}>
-                        <Text style={styles.optionsText}> {this.props.title} </Text>
+                    <Text style={styles.optionsText}> {this.props.title} </Text>
                 </TouchableOpacity>
             );
     }
 }
 
 class Options extends PureComponent{
-    state = { selected: new Map()}
+    state = { selected: null}
     onPressItem(id){
-        this.setState((state) => {
-            // copy the map rather than modifying state.
-            const selected = new Map(state.selected);
-            selected.forEach((value, key) => selected.set(key, false));
-            selected.set(id, true); // toggle
-            return {selected};
-        });
+        // set
+        this.setState({selected: id});
+        // call the function
+        for(let i = 0; i < this.props.data.length; i++){
+            let item = this.props.data[i];
+            if(item.id === id)
+                item.onPress(id);
+        }
     }
     keyExtractor(item, index){
         return item.id;
@@ -59,15 +74,15 @@ class Options extends PureComponent{
                 title={item.title}
                 id={item.id}
                 onPress={this.onPressItem.bind(this)}
-                selected={!!this.state.selected.get(item.id)}
+                selected={this.state.selected === item.id}
             />
         );
     }
     render(){
         return(
             <View style={styles.options}>
-                <Image style={styles.backgroundImage} source={require('./images/menuOptionsBack.png')} />
                 <FlatList
+                    horizontal={true}
                     contentContainerStyle={styles.optionsList}
                     data={this.props.data}
                     extraData={this.state}
@@ -76,6 +91,7 @@ class Options extends PureComponent{
                 />
             </View>
         );
+        <Image style={styles.backgroundImage} source={require('./images/menuOptionsBack.png')} />
     }
 }
 
@@ -83,31 +99,14 @@ export default class Menu extends Component{
     render(){
         return(
             <View style={styles.page}>
-                <Header text={"Hello page"}/>
-                <Options data={menuOptions} />
+                <Header text={this.props.menuHeader ? this.props.menuHeader.name : defaultMenuHeader.name} />
+                <Options data={this.props.menuHeader ? this.props.menuHeader.buttons : defaultMenuHeader.buttons} />
 
-                <EventsList data={eventsData} />
-
-                <Image style={styles.shadow} source={require('./images/optionsShadowShort.png')} />
+                { this.props.innerPage }
             </View>
         );
     }
 }
-
-const eventsData = [
-    {title: 'Lekciya Shcherbiny', id: 'super', image: 'https://www.newstatesman.com/sites/all/themes/creative-responsive-theme/images/new_statesman_events.jpg'},
-    {title: 'Fuchin Hell', id: 'hell', image: false},
-    {title: 'What is this', id: 'donno man', image: 'http://9squareevents.com/wp-content/uploads/2014/07/events.jpg'},
-    {title: 'Yet another useless box', id: 'useless', image: false},
-    {title: 'What is this?', id: 'hey', image: false},
-    {title: 'Lviv City Council Party', id: 'partyParty', image: false}
-];
-
-const menuOptions = [
-    {id: 'hello', title: 'hello'},
-    {id: 'bye', title: 'bye'},
-    {id: 'wtf', title: 'what the actual'}
-];
 
 const styles = StyleSheet.create({
     page: {
@@ -137,41 +136,47 @@ const styles = StyleSheet.create({
     },
     headerText: {
         fontSize: 24,
-        color: "#CDE7FA",
+        color: "#FFFFFF",
+        fontWeight: 'bold',
         margin: 8
     },
     options: {
         width: "100%",
-        height: 36,
+        height: 40,
         backgroundColor: "#227FDD",
         justifyContent: "flex-start",
         flexDirection: "row"
     },
     optionsList: {
-        width: "100%",
-        height: 36,
         justifyContent: "flex-start",
         flexDirection: "row"
     },
     optionsButton: {
-        height: "100%"
+        height: 40
+    },
+    optionsButtonRect: {
+        height: 30,
+        margin: 5,
+        padding: 0,
+        backgroundColor: '#146CB4',
+        borderRadius: 15
     },
     optionsText: {
-        fontSize: 18,
+        fontSize: 22,
         color: "#146CB4",
         padding: 6,
-        paddingHorizontal: 10
+        paddingHorizontal: 15
     },
     optionsTextSelected: {
-        fontSize: 18,
-        color: "#2E72A0",
-        padding: 6,
-        paddingHorizontal: 10
+        fontSize: 22,
+        color: '#FFFFFF',
+        padding: 0,
+        paddingHorizontal: 10,
     },
     shadow: {
         position: 'absolute',
         left: 0,
-        top: 86,
+        top: 90,
         width: "100%",
         height: 5,
         resizeMode: "stretch"
